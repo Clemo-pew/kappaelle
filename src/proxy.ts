@@ -1,24 +1,30 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabaseAnonKey, supabaseEnvNames, supabaseUrl } from "@/lib/env";
 
 function setupErrorPage(missing: string[]) {
+  const found = supabaseEnvNames();
+  const env = process.env.VERCEL_ENV ?? "locale";
   const html = `<!doctype html><html lang="it"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Configurazione mancante</title>
 <body style="font-family:system-ui,sans-serif;max-width:640px;margin:60px auto;padding:0 16px;color:#1c1917;line-height:1.5">
 <h1 style="font-size:20px">Configurazione mancante</h1>
-<p>Su Vercel mancano queste variabili d'ambiente:</p>
+<p>Non trovo queste variabili d'ambiente:</p>
 <ul>${missing.map((m) => `<li><code>${m}</code></li>`).join("")}</ul>
-<p>Aggiungile in <b>Settings → Environment Variables</b> (ambiente <i>Production</i>), poi fai <b>Redeploy</b>: le variabili vengono lette al momento della build.</p>
+<p><b>Ambiente di questo deploy:</b> <code>${env}</code></p>
+<p><b>Variabili Supabase che vedo</b> (solo i nomi):
+${found.length ? `<ul>${found.map((m) => `<li><code>${m}</code></li>`).join("")}</ul>` : " <i>nessuna</i></p>"}
+<p>Controlla in <b>Settings → Environment Variables</b> che i nomi siano identici e che sia spuntato l'ambiente <code>${env}</code>, poi fai <b>Redeploy</b>.</p>
 </body></html>`;
   return new NextResponse(html, { status: 500, headers: { "content-type": "text/html; charset=utf-8" } });
 }
 
 export async function proxy(request: NextRequest) {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = supabaseUrl();
+  const key = supabaseAnonKey();
   const missing = [
     !url && "NEXT_PUBLIC_SUPABASE_URL",
-    !key && "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    !key && "NEXT_PUBLIC_SUPABASE_ANON_KEY (o NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY)",
   ].filter(Boolean) as string[];
   if (missing.length) return setupErrorPage(missing);
 

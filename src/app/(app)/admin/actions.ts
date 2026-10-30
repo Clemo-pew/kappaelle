@@ -146,6 +146,20 @@ export async function deleteTask(formData: FormData) {
   redirect("/admin");
 }
 
+/** Azioni sui task selezionati nella lista: elimina, archivia, ripristina. */
+export async function bulkTasks(formData: FormData) {
+  await requireAdmin();
+  const ids = formData.getAll("ids").map(String).filter((s) => /^[0-9a-f-]{36}$/i.test(s));
+  const op = String(formData.get("op") ?? "");
+  if (!ids.length) return;
+
+  const supabase = await createClient();
+  if (op === "delete") await supabase.from("tasks").delete().in("id", ids);
+  else if (op === "archive") await supabase.from("tasks").update({ archived: true }).in("id", ids);
+  else if (op === "restore") await supabase.from("tasks").update({ archived: false }).in("id", ids);
+  refresh();
+}
+
 // --------------------------------------------------------------- CLIENTI
 
 export async function addClient(_prev: FormState, formData: FormData): Promise<FormState> {

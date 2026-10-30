@@ -11,6 +11,7 @@ import { ConfirmButton } from "@/components/confirm-button";
 import { ProgressEditor } from "@/app/(app)/miei-task/progress-editor";
 import { CommentBox } from "./comment-box";
 import { deleteComment } from "./actions";
+import { deleteTask } from "@/app/(app)/admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +65,18 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
           <div className="flex flex-wrap items-start justify-between gap-3">
             <h1 className="text-2xl font-semibold leading-tight">{task.title}</h1>
             {isAdmin && (
-              <Link href={`/admin/task/${task.id}`} className="btn-ghost">Modifica</Link>
+              <div className="flex gap-2">
+                <Link href={`/admin/task/${task.id}`} className="btn-ghost">Modifica</Link>
+                <form action={deleteTask}>
+                  <input type="hidden" name="id" value={task.id} />
+                  <ConfirmButton
+                    className="btn-danger"
+                    message="Eliminare definitivamente questo task? Verranno cancellati anche commenti e avanzamenti."
+                  >
+                    Elimina
+                  </ConfirmButton>
+                </form>
+              </div>
             )}
           </div>
           <DueDate date={task.due_date} done={pct === 100} />

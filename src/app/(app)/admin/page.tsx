@@ -4,6 +4,7 @@ import { TASK_SELECT, commentCount, taskProgress, type Task } from "@/lib/types"
 import { LinkList } from "@/components/links";
 import { DueDate, PriorityBadge, ProgressBar, formatDateTime } from "@/components/ui";
 import { getClients, getEmployees } from "@/lib/data";
+import { BulkForm } from "./bulk-form";
 
 export const dynamic = "force-dynamic";
 
@@ -129,13 +130,20 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
         )}
       </form>
 
-      <div className="space-y-3">
+      <BulkForm archivedView={stato === "archiviati"} total={tasks.length}>
         {tasks.length === 0 && <div className="card p-8 text-center text-sm text-muted">Nessun task con questi filtri.</div>}
         {tasks.map((t) => {
           const pct = taskProgress(t);
           return (
-            <article key={t.id} className="card p-5">
+            <article key={t.id} className="card p-5 has-[input[name=ids]:checked]:border-brand has-[input[name=ids]:checked]:bg-brand/5">
               <div className="flex flex-wrap items-start justify-between gap-4">
+                <input
+                  type="checkbox"
+                  name="ids"
+                  value={t.id}
+                  aria-label={`Seleziona ${t.title}`}
+                  className="mt-1.5 h-4 w-4 shrink-0 accent-[var(--color-brand)]"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
                     {t.clients && (
@@ -200,7 +208,7 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
             </article>
           );
         })}
-      </div>
+      </BulkForm>
     </div>
   );
 }

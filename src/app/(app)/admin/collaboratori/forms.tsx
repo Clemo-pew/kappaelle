@@ -57,7 +57,7 @@ export function NewEmployeeForm() {
         <div>
           <label className="label" htmlFor="role">Ruolo</label>
           <select id="role" name="role" defaultValue="employee" className="input">
-            <option value="employee">Dipendente</option>
+            <option value="employee">Collaboratore</option>
             <option value="admin">Admin</option>
           </select>
         </div>

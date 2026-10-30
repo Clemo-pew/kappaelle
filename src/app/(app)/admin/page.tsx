@@ -6,7 +6,7 @@ import { getClients, getEmployees } from "./data";
 
 export const dynamic = "force-dynamic";
 
-type SP = Promise<{ cliente?: string; dipendente?: string; stato?: string; q?: string }>;
+type SP = Promise<{ cliente?: string; collaboratore?: string; stato?: string; q?: string }>;
 
 export default async function AdminTasksPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
@@ -28,7 +28,7 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
   const { data } = await query;
   let tasks = (data ?? []) as unknown as Task[];
 
-  if (sp.dipendente) tasks = tasks.filter((t) => t.task_assignees.some((a) => a.user_id === sp.dipendente));
+  if (sp.collaboratore) tasks = tasks.filter((t) => t.task_assignees.some((a) => a.user_id === sp.collaboratore));
   if (stato === "aperti") tasks = tasks.filter((t) => taskProgress(t) < 100);
   if (stato === "completati") tasks = tasks.filter((t) => t.task_assignees.length > 0 && taskProgress(t) === 100);
 
@@ -79,8 +79,8 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
           </select>
         </div>
         <div className="min-w-40">
-          <label className="label" htmlFor="dipendente">Dipendente</label>
-          <select id="dipendente" name="dipendente" defaultValue={sp.dipendente ?? ""} className="input">
+          <label className="label" htmlFor="collaboratore">Collaboratore</label>
+          <select id="collaboratore" name="collaboratore" defaultValue={sp.collaboratore ?? ""} className="input">
             <option value="">Tutti</option>
             {employees.map((e) => <option key={e.id} value={e.id}>{e.full_name || e.email}</option>)}
           </select>
@@ -95,7 +95,7 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
           </select>
         </div>
         <button className="btn-ghost">Filtra</button>
-        {(sp.q || sp.cliente || sp.dipendente || sp.stato) && (
+        {(sp.q || sp.cliente || sp.collaboratore || sp.stato) && (
           <Link href="/admin" className="text-sm text-muted underline">Azzera</Link>
         )}
       </form>
@@ -138,7 +138,7 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
                   <li key={a.user_id} className="py-2.5 text-sm">
                     <div className="flex items-center gap-3">
                       <Link
-                        href={filterLink({ dipendente: a.user_id })}
+                        href={filterLink({ collaboratore: a.user_id })}
                         className="w-40 truncate font-medium hover:underline"
                       >
                         {a.profiles?.full_name || a.profiles?.email}

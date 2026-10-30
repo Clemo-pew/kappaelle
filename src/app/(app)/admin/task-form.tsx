@@ -78,7 +78,7 @@ export function TaskForm({
         <legend className="label">Assegnato a * <span className="normal-case">({selected.size} selezionati)</span></legend>
         {employees.length === 0 ? (
           <p className="text-sm text-muted">
-            Nessun dipendente. <Link href="/admin/dipendenti" className="text-brand underline">Creane uno</Link>.
+            Nessun collaboratore. <Link href="/admin/collaboratori" className="text-brand underline">Creane uno</Link>.
           </p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

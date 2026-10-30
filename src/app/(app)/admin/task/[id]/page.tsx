@@ -14,7 +14,7 @@ export default async function EditTaskPage({ params }: { params: Promise<{ id: s
   const task = data as unknown as Task;
 
   const [clients, allEmployees] = await Promise.all([getClients(), getEmployees(false)]);
-  // mostra i dipendenti attivi + eventuali disattivati ancora assegnati a questo task
+  // mostra i collaboratori attivi + eventuali disattivati ancora assegnati a questo task
   const assignedIds = new Set(task.task_assignees.map((a) => a.user_id));
   const employees = allEmployees.filter((e) => e.active || assignedIds.has(e.id));
 
@@ -38,7 +38,7 @@ export default async function EditTaskPage({ params }: { params: Promise<{ id: s
       </div>
       {task.archived && (
         <p className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-800">
-          Task archiviato: non compare ai dipendenti.
+          Task archiviato: non compare ai collaboratori.
         </p>
       )}
       <TaskForm task={task} clients={clients} employees={employees} />

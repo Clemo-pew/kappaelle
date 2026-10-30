@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? [
         { href: "/admin", label: "Tutti i task" },
         { href: "/miei-task", label: "I miei task" },
-        { href: "/admin/dipendenti", label: "Dipendenti" },
+        { href: "/admin/collaboratori", label: "Collaboratori" },
         { href: "/admin/clienti", label: "Clienti" },
       ]
     : [{ href: "/miei-task", label: "I miei task" }];

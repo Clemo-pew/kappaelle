@@ -34,7 +34,7 @@ export async function saveTask(_prev: FormState, formData: FormData): Promise<Fo
 
   if (!f.title) return { error: "Il titolo è obbligatorio." };
   if (!PRIORITIES.includes(f.priority)) return { error: "Priorità non valida." };
-  if (f.assignees.length === 0) return { error: "Assegna il task ad almeno un dipendente." };
+  if (f.assignees.length === 0) return { error: "Assegna il task ad almeno un collaboratore." };
 
   const payload = {
     title: f.title,

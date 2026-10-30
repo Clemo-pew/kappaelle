@@ -87,7 +87,7 @@ create table if not exists public.tasks (
   created_at   timestamptz not null default now()
 );
 
--- ---------- Assegnazioni (un task → più dipendenti, ognuno con la sua %) ----------
+-- ---------- Assegnazioni (un task → più collaboratori, ognuno con la sua %) ----------
 create table if not exists public.task_assignees (
   task_id      uuid not null references public.tasks(id) on delete cascade,
   user_id      uuid not null references public.profiles(id) on delete cascade,
@@ -135,7 +135,7 @@ create trigger task_assignees_touch
   before insert or update on public.task_assignees
   for each row execute function public.touch_assignee();
 
--- Il dipendente può modificare SOLO progress e note della propria riga
+-- Il collaboratore può modificare SOLO progress e note della propria riga
 create or replace function public.guard_assignee_update()
 returns trigger
 language plpgsql
@@ -181,7 +181,7 @@ drop policy if exists "clients_admin_write" on public.clients;
 create policy "clients_admin_write" on public.clients
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
--- tasks: admin vede tutto; il dipendente solo i task a cui è assegnato
+-- tasks: admin vede tutto; il collaboratore solo i task a cui è assegnato
 drop policy if exists "tasks_select" on public.tasks;
 create policy "tasks_select" on public.tasks
   for select to authenticated using (
@@ -192,7 +192,7 @@ drop policy if exists "tasks_admin_write" on public.tasks;
 create policy "tasks_admin_write" on public.tasks
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
--- task_assignees: admin tutto; il dipendente vede le righe dei propri task
+-- task_assignees: admin tutto; il collaboratore vede le righe dei propri task
 -- (anche quelle dei colleghi sullo stesso task) e aggiorna solo la propria
 drop policy if exists "assignees_select" on public.task_assignees;
 create policy "assignees_select" on public.task_assignees

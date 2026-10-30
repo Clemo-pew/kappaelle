@@ -12,7 +12,7 @@ export default async function EmployeesPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold">Dipendenti</h1>
+        <h1 className="text-2xl font-semibold">Collaboratori</h1>
         <p className="text-sm text-muted">Crea gli account e gestisci gli accessi del team.</p>
       </div>
 
@@ -32,7 +32,7 @@ export default async function EmployeesPage() {
                 className="input w-36"
                 aria-label="Ruolo"
               >
-                <option value="employee">Dipendente</option>
+                <option value="employee">Collaboratore</option>
                 <option value="admin">Admin</option>
               </select>
               <button className="btn-ghost">Salva</button>
@@ -53,7 +53,7 @@ export default async function EmployeesPage() {
         ))}
       </div>
       <p className="text-xs text-muted">
-        Un dipendente disattivato non può più accedere, ma i suoi task e il suo storico restano.
+        Un collaboratore disattivato non può più accedere, ma i suoi task e il suo storico restano.
       </p>
     </div>
   );

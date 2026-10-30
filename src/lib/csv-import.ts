@@ -204,6 +204,14 @@ export function checkRows(
     const k = norm(p.full_name).split(" ")[0];
     if (k) byFirst.set(k, [...(byFirst.get(k) ?? []), p]);
   }
+  // handle tipo "@mirydimartino" o "FabioPirajno": nome senza spazi oppure parte dell'email prima della @
+  const compact = (s: string) => norm(s).replace(/[^a-z0-9]/g, "");
+  const byHandle = new Map<string, Person[]>();
+  for (const p of people) {
+    for (const k of new Set([compact(p.full_name), compact(p.email.split("@")[0])])) {
+      if (k) byHandle.set(k, [...(byHandle.get(k) ?? []).filter((x) => x.id !== p.id), p]);
+    }
+  }
   const clientByName = new Map(clients.map((c) => [norm(c.name), c]));
 
   return records.slice(0, MAX_ROWS).map((r, i) => {
@@ -244,10 +252,23 @@ export function checkRows(
     // assegnati
     const assigneeIds: string[] = [];
     const assigneeNames: string[] = [];
-    const tokens = (r.assegnati ?? "").split(/[,;|+\n]/).map((t) => t.trim()).filter(Boolean);
+    const tokens = (r.assegnati ?? "")
+      .split(/[,;|+\n]/)
+      .map((t) => t.trim().replace(/^@/, "").trim())
+      .filter(Boolean);
     if (!tokens.length) errors.push("Nessun collaboratore assegnato");
     for (const t of tokens) {
       const k = norm(t);
+      // "tutti" = tutto il team attivo
+      if (k === "tutti" || k === "tutto il team" || k === "team") {
+        for (const p of people) {
+          if (!assigneeIds.includes(p.id)) {
+            assigneeIds.push(p.id);
+            assigneeNames.push(p.full_name || p.email);
+          }
+        }
+        continue;
+      }
       let match: Person | undefined = byEmail.get(k);
       if (!match) {
         const full = byName.get(k);
@@ -262,6 +283,14 @@ export function checkRows(
         if (first?.length === 1) match = first[0];
         else if (first && first.length > 1) {
           errors.push(`"${t}" corrisponde a più persone: usa nome e cognome o l'email`);
+          continue;
+        }
+      }
+      if (!match) {
+        const h = byHandle.get(compact(t));
+        if (h?.length === 1) match = h[0];
+        else if (h && h.length > 1) {
+          errors.push(`"${t}" corrisponde a più persone: usa l'email`);
           continue;
         }
       }

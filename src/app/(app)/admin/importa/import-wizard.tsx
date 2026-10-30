@@ -161,7 +161,7 @@ export function ImportWizard({ people, clients }: { people: Person[]; clients: C
                 </thead>
                 <tbody className="divide-y divide-line">
                   <tr><td className="py-1.5 pr-4 font-mono">titolo *</td><td>Il nome del task</td></tr>
-                  <tr><td className="py-1.5 pr-4 font-mono">assegnati *</td><td>Email o nome e cognome; più persone separate da virgola</td></tr>
+                  <tr><td className="py-1.5 pr-4 font-mono">assegnati *</td><td>Email, nome e cognome o handle (es. @mariorossi); più persone separate da virgola; <b>tutti</b> = tutto il team</td></tr>
                   <tr><td className="py-1.5 pr-4 font-mono">descrizione</td><td>Dettagli del lavoro</td></tr>
                   <tr><td className="py-1.5 pr-4 font-mono">cliente</td><td>Nome del cliente; se non esiste viene creato</td></tr>
                   <tr><td className="py-1.5 pr-4 font-mono">priorita</td><td>bassa, media, alta, urgente (vuoto = media)</td></tr>

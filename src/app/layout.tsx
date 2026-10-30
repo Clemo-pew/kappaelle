@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Kappaelle — Task",
+  title: "Kappaelle — Gestionale task",
   description: "Gestionale task del team",
 };
 

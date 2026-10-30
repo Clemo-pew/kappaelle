@@ -5,7 +5,7 @@ export function ProgressBar({ value, size = "md" }: { value: number; size?: "sm"
   return (
     <div className={`w-full overflow-hidden rounded-full bg-stone-100 ${size === "sm" ? "h-1.5" : "h-2.5"}`}>
       <div
-        className={`h-full rounded-full transition-all ${done ? "bg-ok" : "bg-brand"}`}
+        className={`h-full rounded-full transition-all ${done ? "bg-ok" : "bg-accent"}`}
         style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>

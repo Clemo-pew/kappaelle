@@ -88,7 +88,7 @@ export function TaskForm({
                 <label
                   key={e.id}
                   className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition ${
-                    on ? "border-brand bg-orange-50" : "border-line bg-white hover:bg-stone-50"
+                    on ? "border-brand bg-brand/10" : "border-line bg-white hover:bg-stone-50"
                   }`}
                 >
                   <input

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
 import { Nav } from "@/components/nav";
@@ -19,10 +20,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 border-b border-line bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white">K</div>
-            <span className="hidden font-semibold sm:inline">Kappaelle</span>
-          </div>
+          <Link href="/" className="shrink-0" aria-label="Kappaelle comunicazione — home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Kappaelle comunicazione" width={243} height={80} className="h-9 w-auto sm:h-10" />
+          </Link>
           <div className="min-w-0 flex-1">
             <Nav items={items} />
           </div>

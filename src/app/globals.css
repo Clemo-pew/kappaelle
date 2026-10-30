@@ -5,8 +5,9 @@
   --color-muted: #78716c;
   --color-line: #e7e5e4;
   --color-paper: #fafaf9;
-  --color-brand: #e8590c;
-  --color-brand-dark: #c2410c;
+  --color-brand: #00748f;
+  --color-brand-dark: #005b70;
+  --color-accent: #00b3a9;
   --color-ok: #15803d;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }

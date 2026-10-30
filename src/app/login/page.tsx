@@ -17,10 +17,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-brand text-xl font-bold text-white">
-            K
-          </div>
-          <h1 className="text-xl font-semibold">Kappaelle Task</h1>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Kappaelle comunicazione"
+            width={243}
+            height={80}
+            className="mx-auto mb-4 h-16 w-auto"
+          />
+          <h1 className="text-lg font-semibold">Gestionale task</h1>
           <p className="text-sm text-muted">Accedi con le tue credenziali</p>
         </div>
 

@@ -1,5 +1,5 @@
 import { TaskForm } from "../../task-form";
-import { getClients, getEmployees } from "../../data";
+import { getClients, getEmployees } from "@/lib/data";
 
 export default async function NewTaskPage() {
   const [clients, employees] = await Promise.all([getClients(), getEmployees()]);

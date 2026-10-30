@@ -5,13 +5,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth";
-import { PRIORITIES, type Priority } from "@/lib/types";
+import { PRIORITIES, type Priority, type TaskLink } from "@/lib/types";
 
 export type FormState = { ok?: boolean; error?: string; message?: string };
 
 function refresh() {
-  revalidatePath("/admin", "layout");
-  revalidatePath("/miei-task");
+  revalidatePath("/", "layout");
 }
 
 // ------------------------------------------------------------------ TASK
@@ -23,7 +22,32 @@ function readTaskForm(formData: FormData) {
   const priority = String(formData.get("priority") ?? "media") as Priority;
   const dueDate = String(formData.get("due_date") ?? "") || null;
   const assignees = formData.getAll("assignees").map(String).filter(Boolean);
-  return { title, description, clientId, priority, dueDate, assignees };
+  return { title, description, clientId, priority, dueDate, assignees, links: parseLinks(formData.get("links")) };
+}
+
+function parseLinks(raw: FormDataEntryValue | null): TaskLink[] | { error: string } {
+  let arr: unknown;
+  try {
+    arr = JSON.parse(String(raw ?? "[]"));
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(arr)) return [];
+  const out: TaskLink[] = [];
+  for (const item of arr.slice(0, 20)) {
+    let url = String((item as TaskLink)?.url ?? "").trim();
+    const label = String((item as TaskLink)?.label ?? "").trim().slice(0, 80);
+    if (!url) continue;
+    if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+    try {
+      const u = new URL(url);
+      if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error();
+    } catch {
+      return { error: `Link non valido: ${url}` };
+    }
+    out.push({ label, url });
+  }
+  return out;
 }
 
 export async function saveTask(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -35,6 +59,7 @@ export async function saveTask(_prev: FormState, formData: FormData): Promise<Fo
   if (!f.title) return { error: "Il titolo è obbligatorio." };
   if (!PRIORITIES.includes(f.priority)) return { error: "Priorità non valida." };
   if (f.assignees.length === 0) return { error: "Assegna il task ad almeno un collaboratore." };
+  if (!Array.isArray(f.links)) return { error: f.links.error };
 
   const payload = {
     title: f.title,
@@ -42,6 +67,7 @@ export async function saveTask(_prev: FormState, formData: FormData): Promise<Fo
     client_id: f.clientId,
     priority: f.priority,
     due_date: f.dueDate,
+    links: f.links,
   };
 
   let taskId = id;

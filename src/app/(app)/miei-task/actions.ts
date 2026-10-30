@@ -27,7 +27,6 @@ export async function updateMyProgress(_prev: ProgressState, formData: FormData)
   if (error) return { error: "Salvataggio non riuscito: " + error.message };
   if (!data?.length) return { error: "Non sei assegnato a questo task." };
 
-  revalidatePath("/miei-task");
-  revalidatePath("/admin");
+  revalidatePath("/", "layout");
   return { ok: true };
 }

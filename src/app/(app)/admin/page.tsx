@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { TASK_SELECT, taskProgress, type Task } from "@/lib/types";
+import { TASK_SELECT, commentCount, taskProgress, type Task } from "@/lib/types";
+import { LinkList } from "@/components/links";
 import { DueDate, PriorityBadge, ProgressBar, formatDateTime } from "@/components/ui";
-import { getClients, getEmployees } from "./data";
+import { getClients, getEmployees } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -144,10 +145,21 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
                     )}
                     <PriorityBadge priority={t.priority} />
                   </div>
-                  <Link href={`/admin/task/${t.id}`} className="text-lg font-semibold leading-snug hover:underline">
+                  <Link href={`/task/${t.id}`} className="text-lg font-semibold leading-snug hover:underline">
                     {t.title}
                   </Link>
-                  <div><DueDate date={t.due_date} done={pct === 100} /></div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <DueDate date={t.due_date} done={pct === 100} />
+                    <Link href={`/task/${t.id}#commenti`} className="text-xs text-muted hover:text-brand">
+                      💬 {commentCount(t)}
+                    </Link>
+                    <Link href={`/admin/task/${t.id}`} className="text-xs text-muted hover:text-brand">
+                      ✎ Modifica
+                    </Link>
+                  </div>
+                  {t.links?.length > 0 && (
+                    <div className="mt-2"><LinkList links={t.links} compact /></div>
+                  )}
                 </div>
                 <div className="w-40">
                   <div className="mb-1 flex items-baseline justify-between">

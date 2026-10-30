@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { TASK_SELECT, type Task } from "@/lib/types";
+import { TASK_SELECT, commentCount, type Task } from "@/lib/types";
 import { DueDate, PriorityBadge, ProgressBar, formatDateTime } from "@/components/ui";
+import { LinkList } from "@/components/links";
 import { ProgressEditor } from "./progress-editor";
 
 export const dynamic = "force-dynamic";
@@ -88,7 +90,9 @@ function TaskCard({ task, meId }: { task: Task; meId: string }) {
             )}
             <PriorityBadge priority={task.priority} />
           </div>
-          <h3 className="text-lg font-semibold leading-snug">{task.title}</h3>
+          <h3 className="text-lg font-semibold leading-snug">
+            <Link href={`/task/${task.id}`} className="hover:underline">{task.title}</Link>
+          </h3>
           <DueDate date={task.due_date} done={mine.progress === 100} />
         </div>
         <div className="w-32 text-right">
@@ -98,7 +102,13 @@ function TaskCard({ task, meId }: { task: Task; meId: string }) {
       </div>
 
       {task.description && (
-        <p className="mb-4 whitespace-pre-wrap text-sm text-stone-700">{task.description}</p>
+        <p className="mb-4 line-clamp-4 whitespace-pre-wrap text-sm text-stone-700">{task.description}</p>
+      )}
+
+      {task.links?.length > 0 && (
+        <div className="mb-4">
+          <LinkList links={task.links} compact />
+        </div>
       )}
 
       {others.length > 0 && (
@@ -119,7 +129,12 @@ function TaskCard({ task, meId }: { task: Task; meId: string }) {
       )}
 
       <ProgressEditor taskId={task.id} initialProgress={mine.progress} initialNote={mine.note} />
-      <p className="mt-2 text-xs text-muted">Ultimo aggiornamento: {formatDateTime(mine.updated_at)}</p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
+        <p className="text-xs text-muted">Ultimo aggiornamento: {formatDateTime(mine.updated_at)}</p>
+        <Link href={`/task/${task.id}#commenti`} className="text-sm font-medium text-brand hover:underline">
+          💬 {commentCount(task) ? `${commentCount(task)} commenti` : "Commenta"} →
+        </Link>
+      </div>
     </article>
   );
 }

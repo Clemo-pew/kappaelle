@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
-import { getEmployees } from "../data";
+import { getEmployees } from "@/lib/data";
 import { setEmployeeActive, updateEmployee } from "../actions";
 import { NewEmployeeForm, ResetPasswordForm } from "./forms";
 

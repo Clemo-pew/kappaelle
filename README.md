@@ -4,6 +4,11 @@ Gestionale interno per assegnare task ai collaboratori e seguirne l'avanzamento.
 
 - **Admin**: crea task (titolo, descrizione, cliente/progetto, priorità, scadenza), li assegna a uno o più collaboratori, vede l'avanzamento di ognuno con le note, filtra per cliente/collaboratore/mese/stato, gestisce account e clienti.
 - **Collaboratore**: accede con le sue credenziali, vede solo i task a lui assegnati, li segna come **completati (100%)** oppure indica una **percentuale** (es. 75% "quasi finito") con una nota facoltativa.
+- **Commenti e menzioni**: ogni task ha la sua pagina con i commenti; scrivendo `@` si menziona un collaboratore, che riceve una notifica e può vedere il task (anche se non è assegnato).
+- **Notifiche interne**: campanella in alto con il numero di non lette (nuovo task assegnato, nuova menzione).
+- **Link allegati**: ogni task può avere link con etichetta (Google Drive, Dropbox, WeTransfer, Figma…).
+
+> **Aggiornamenti del database**: quando il file `supabase/schema.sql` cambia, basta rieseguirlo per intero nell'SQL Editor. È sicuro: non cancella né duplica i dati esistenti.
 
 Stack: Next.js 16 (App Router) · Supabase (Auth + Postgres con Row Level Security) · Tailwind CSS 4 · deploy su Vercel.
 
@@ -43,6 +48,8 @@ Stack: Next.js 16 (App Router) · Supabase (Auth + Postgres con Row Level Securi
 2. **Collaboratori** → crea gli account (il pulsante ⟳ genera una password) e comunica le credenziali.
 3. **Tutti i task → + Nuovo task** → compila e scegli uno o più collaboratori.
 4. Ogni collaboratore in **I miei task** aggiorna la sua percentuale; l'admin vede in tempo reale la % di ciascuno, la media del task, l'ora dell'ultimo aggiornamento e le note.
+5. Cliccando sul titolo di un task si apre la sua pagina: link allegati, avanzamento e **commenti**. Scrivi `@` e scegli un collaboratore per menzionarlo.
+6. La **campanella** in alto mostra le notifiche non lette; aprendo il task collegato diventano lette.
 
 Un collaboratore **disattivato** non può più accedere, ma il suo storico resta. I task **archiviati** spariscono dalla vista dei collaboratori.
 

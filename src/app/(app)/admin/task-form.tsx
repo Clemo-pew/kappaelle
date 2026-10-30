@@ -3,7 +3,57 @@
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import { saveTask, type FormState } from "./actions";
-import { PRIORITIES, type Client, type Profile, type Task } from "@/lib/types";
+import { PRIORITIES, type Client, type Profile, type Task, type TaskLink } from "@/lib/types";
+
+function LinksEditor({ initial }: { initial: TaskLink[] }) {
+  const [rows, setRows] = useState<TaskLink[]>(initial.length ? initial : []);
+
+  const update = (i: number, patch: Partial<TaskLink>) =>
+    setRows((r) => r.map((row, j) => (j === i ? { ...row, ...patch } : row)));
+
+  return (
+    <fieldset>
+      <legend className="label">Link allegati (facoltativi)</legend>
+      <input type="hidden" name="links" value={JSON.stringify(rows.filter((r) => r.url.trim()))} />
+      <div className="space-y-2">
+        {rows.map((row, i) => (
+          <div key={i} className="flex flex-wrap gap-2 sm:flex-nowrap">
+            <input
+              value={row.label}
+              onChange={(e) => update(i, { label: e.target.value })}
+              placeholder="Etichetta (es. Foto shooting)"
+              className="input sm:w-56"
+              aria-label="Etichetta link"
+            />
+            <input
+              value={row.url}
+              onChange={(e) => update(i, { url: e.target.value })}
+              placeholder="https://drive.google.com/…"
+              type="url"
+              className="input flex-1"
+              aria-label="Indirizzo link"
+            />
+            <button
+              type="button"
+              onClick={() => setRows((r) => r.filter((_, j) => j !== i))}
+              className="btn-ghost px-3"
+              aria-label="Rimuovi link"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => setRows((r) => [...r, { label: "", url: "" }])}
+        className="mt-2 text-sm font-medium text-brand hover:underline"
+      >
+        + Aggiungi link
+      </button>
+    </fieldset>
+  );
+}
 
 export function TaskForm({
   task,
@@ -49,6 +99,8 @@ export function TaskForm({
           placeholder="Dettagli, link, materiali, indicazioni…"
         />
       </div>
+
+      <LinksEditor initial={task?.links ?? []} />
 
       <div className="grid gap-4 sm:grid-cols-3">
         <div>

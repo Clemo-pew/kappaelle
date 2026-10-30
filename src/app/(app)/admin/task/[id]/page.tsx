@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { TASK_SELECT, type Task } from "@/lib/types";
 import { TaskForm } from "../../task-form";
-import { getClients, getEmployees } from "../../data";
+import { getClients, getEmployees } from "@/lib/data";
 import { deleteTask, setArchived } from "../../actions";
 import { ConfirmButton } from "@/components/confirm-button";
 

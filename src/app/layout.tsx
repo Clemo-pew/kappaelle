@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Kappaelle — Task",
+  description: "Gestionale task del team",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="it">
+      <body className="min-h-screen font-sans antialiased">{children}</body>
+    </html>
+  );
+}

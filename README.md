@@ -2,7 +2,7 @@
 
 Gestionale interno per assegnare task ai collaboratori e seguirne l'avanzamento.
 
-- **Admin**: crea task (titolo, descrizione, cliente/progetto, priorità, scadenza), li assegna a uno o più collaboratori, vede l'avanzamento di ognuno con le note, filtra per cliente/collaboratore/stato, gestisce account e clienti.
+- **Admin**: crea task (titolo, descrizione, cliente/progetto, priorità, scadenza), li assegna a uno o più collaboratori, vede l'avanzamento di ognuno con le note, filtra per cliente/collaboratore/mese/stato, gestisce account e clienti.
 - **Collaboratore**: accede con le sue credenziali, vede solo i task a lui assegnati, li segna come **completati (100%)** oppure indica una **percentuale** (es. 75% "quasi finito") con una nota facoltativa.
 
 Stack: Next.js 16 (App Router) · Supabase (Auth + Postgres con Row Level Security) · Tailwind CSS 4 · deploy su Vercel.

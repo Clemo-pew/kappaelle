@@ -6,7 +6,19 @@ import { getClients, getEmployees } from "./data";
 
 export const dynamic = "force-dynamic";
 
-type SP = Promise<{ cliente?: string; collaboratore?: string; stato?: string; q?: string }>;
+type SP = Promise<{ cliente?: string; collaboratore?: string; stato?: string; q?: string; mese?: string }>;
+
+/** Mese di riferimento del task: scadenza, oppure (se manca) data di creazione. Formato "YYYY-MM". */
+function taskMonth(t: { due_date: string | null; created_at: string }) {
+  if (t.due_date) return t.due_date.slice(0, 7);
+  return new Date(t.created_at).toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" }).slice(0, 7);
+}
+
+function monthLabel(ym: string) {
+  const [y, m] = ym.split("-").map(Number);
+  const s = new Date(y, m - 1, 1).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
 export default async function AdminTasksPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
@@ -29,6 +41,12 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
   let tasks = (data ?? []) as unknown as Task[];
 
   if (sp.collaboratore) tasks = tasks.filter((t) => t.task_assignees.some((a) => a.user_id === sp.collaboratore));
+  if (sp.mese) tasks = tasks.filter((t) => taskMonth(t) === sp.mese);
+
+  // Mesi disponibili nel filtro: quelli che hanno almeno un task, più il mese corrente
+  const { data: monthRows } = await supabase.from("tasks").select("due_date, created_at");
+  const currentMonth = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" }).slice(0, 7);
+  const months = [...new Set([currentMonth, ...(monthRows ?? []).map(taskMonth)])].sort().reverse();
   if (stato === "aperti") tasks = tasks.filter((t) => taskProgress(t) < 100);
   if (stato === "completati") tasks = tasks.filter((t) => t.task_assignees.length > 0 && taskProgress(t) === 100);
 
@@ -85,6 +103,13 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
             {employees.map((e) => <option key={e.id} value={e.id}>{e.full_name || e.email}</option>)}
           </select>
         </div>
+        <div className="min-w-40">
+          <label className="label" htmlFor="mese">Mese</label>
+          <select id="mese" name="mese" defaultValue={sp.mese ?? ""} className="input">
+            <option value="">Tutti i mesi</option>
+            {months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
+          </select>
+        </div>
         <div className="min-w-36">
           <label className="label" htmlFor="stato">Stato</label>
           <select id="stato" name="stato" defaultValue={stato} className="input">
@@ -95,7 +120,7 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
           </select>
         </div>
         <button className="btn-ghost">Filtra</button>
-        {(sp.q || sp.cliente || sp.collaboratore || sp.stato) && (
+        {(sp.q || sp.cliente || sp.collaboratore || sp.stato || sp.mese) && (
           <Link href="/admin" className="text-sm text-muted underline">Azzera</Link>
         )}
       </form>

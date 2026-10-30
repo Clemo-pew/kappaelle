@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { sendPush } from "@/lib/push";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/auth";
 import { MENTION_RE } from "@/lib/types";
@@ -46,6 +48,18 @@ export async function addComment(_prev: CommentState, formData: FormData): Promi
       .from("comment_mentions")
       .insert(toNotify.map((user_id) => ({ comment_id: comment.id, user_id })));
     if (mErr) return { error: "Commento salvato, ma le menzioni non sono state inviate: " + mErr.message };
+
+    const { data: task } = await supabase.from("tasks").select("title").eq("id", taskId).maybeSingle();
+    const plain = body.replace(MENTION_RE, (_m, name: string) => `@${name}`).replace(/\s+/g, " ");
+    const excerpt = plain.length > 120 ? plain.slice(0, 117) + "…" : plain;
+    after(() =>
+      sendPush(toNotify, {
+        title: `${me.full_name || "Un collega"} ti ha menzionato`,
+        body: `${task?.title ? `${task.title}: ` : ""}${excerpt}`,
+        url: `/task/${taskId}#c-${comment.id}`,
+        tag: `comment-${comment.id}`,
+      }),
+    );
   }
 
   revalidatePath(`/task/${taskId}`);

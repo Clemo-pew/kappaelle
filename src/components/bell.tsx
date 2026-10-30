@@ -36,6 +36,16 @@ export function Bell({ initial }: { initial: number }) {
     };
   }, [refresh]);
 
+  // Numero sull'icona dell'app installata (iPhone dalla schermata Home, Chrome/Edge desktop)
+  useEffect(() => {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (n?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (!nav.setAppBadge) return;
+    (unread > 0 ? nav.setAppBadge(unread) : nav.clearAppBadge?.())?.catch(() => {});
+  }, [unread]);
+
   const active = pathname.startsWith("/notifiche");
 
   return (

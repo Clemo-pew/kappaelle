@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { displayName, type Notification } from "@/lib/types";
 import { formatDateTime } from "@/components/ui";
 import { clearRead, markAllRead } from "./actions";
+import { PushToggle } from "@/components/push-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,8 @@ export default async function NotificationsPage() {
           )}
         </div>
       </div>
+
+      <PushToggle />
 
       {items.length === 0 ? (
         <div className="card p-8 text-center text-sm text-muted">

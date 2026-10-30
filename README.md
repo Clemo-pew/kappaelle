@@ -38,7 +38,12 @@ Stack: Next.js 16 (App Router) · Supabase (Auth + Postgres con Row Level Securi
    |---|---|
    | `NEXT_PUBLIC_SUPABASE_URL` | Project URL |
    | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chiave `anon` |
-   | `SUPABASE_SERVICE_ROLE_KEY` | chiave `service_role` (serve solo per creare/disattivare account) |
+   | `SUPABASE_SERVICE_ROLE_KEY` | chiave `service_role` (serve per creare account e inviare notifiche push) |
+   | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | chiave pubblica per le notifiche push |
+   | `VAPID_PRIVATE_KEY` | chiave privata per le notifiche push (segreta) |
+   | `VAPID_SUBJECT` | `mailto:` + email di contatto |
+
+   Le chiavi VAPID si generano con `npx web-push generate-vapid-keys`.
 
 3. **Deploy**. Accedi con l'admin creato al punto 1.4.
 
@@ -50,6 +55,13 @@ Stack: Next.js 16 (App Router) · Supabase (Auth + Postgres con Row Level Securi
 4. Ogni collaboratore in **I miei task** aggiorna la sua percentuale; l'admin vede in tempo reale la % di ciascuno, la media del task, l'ora dell'ultimo aggiornamento e le note.
 5. Cliccando sul titolo di un task si apre la sua pagina: link allegati, avanzamento e **commenti**. Scrivi `@` e scegli un collaboratore per menzionarlo.
 6. La **campanella** in alto mostra le notifiche non lette; aprendo il task collegato diventano lette.
+
+## App sul telefono
+
+- **iPhone** (iOS 16.4+): Safari → **Condividi → Aggiungi alla schermata Home**, apri Kappaelle dall'icona, poi **Notifiche → Attiva notifiche**.
+- **Android**: Chrome → menu ⋮ → **Installa app** (o *Aggiungi a schermata Home*), poi **Attiva notifiche**.
+
+Da quel momento arrivano le notifiche push (nuovo task, menzione) anche ad app chiusa, e l'icona mostra il numero di non lette (su iPhone e computer; su Android compare il pallino di notifica del launcher).
 
 Un collaboratore **disattivato** non può più accedere, ma il suo storico resta. I task **archiviati** spariscono dalla vista dei collaboratori.
 

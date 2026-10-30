@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { sendPush } from "@/lib/push";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/auth";
@@ -97,6 +99,21 @@ export async function saveTask(_prev: FormState, formData: FormData): Promise<Fo
       .from("task_assignees")
       .insert(toAdd.map((user_id) => ({ task_id: taskId!, user_id })));
     if (error) return { error: error.message };
+
+    // Notifica push ai nuovi assegnatari (dopo la risposta, senza rallentare il salvataggio)
+    const recipients = toAdd.filter((u) => u !== admin.id);
+    const who = admin.full_name || "L'admin";
+    const due = f.dueDate
+      ? ` · scadenza ${new Date(f.dueDate + "T00:00:00").toLocaleDateString("it-IT", { day: "numeric", month: "short" })}`
+      : "";
+    after(() =>
+      sendPush(recipients, {
+        title: "Nuovo task assegnato",
+        body: `${who} ti ha assegnato: ${f.title}${due}`,
+        url: `/task/${taskId}`,
+        tag: `task-${taskId}`,
+      }),
+    );
   }
   if (toRemove.length) {
     const { error } = await supabase

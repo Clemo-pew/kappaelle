@@ -75,7 +75,10 @@ export default async function AdminTasksPage({ searchParams }: { searchParams: S
           <h1 className="text-2xl font-semibold">Tutti i task</h1>
           <p className="text-sm text-muted">Panoramica dell&apos;avanzamento del team</p>
         </div>
-        <Link href="/admin/task/nuovo" className="btn-primary">+ Nuovo task</Link>
+        <div className="flex gap-2">
+          <Link href="/admin/importa" className="btn-ghost">⬆ Importa CSV</Link>
+          <Link href="/admin/task/nuovo" className="btn-primary">+ Nuovo task</Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

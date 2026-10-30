@@ -10,7 +10,7 @@ type Item = { href: string; label: string };
 function useIsActive() {
   const pathname = usePathname();
   return (href: string) =>
-    href === "/admin" ? pathname === "/admin" || pathname.startsWith("/admin/task") : pathname.startsWith(href);
+    href === "/admin" ? pathname === "/admin" || pathname.startsWith("/admin/task") || pathname.startsWith("/admin/importa") : pathname.startsWith(href);
 }
 
 /** Menu orizzontale: visibile da tablet/desktop in su. */

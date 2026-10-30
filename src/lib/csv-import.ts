@@ -10,21 +10,6 @@ export type ClientRef = { id: string; name: string };
 
 export type ImportLink = { label: string; url: string };
 
-export type CheckedRow = {
-  line: number; // riga nel file (1 = intestazione)
-  title: string;
-  description: string;
-  clientName: string;
-  clientId: string | null;
-  newClient: boolean;
-  priority: Priority;
-  dueDate: string | null; // YYYY-MM-DD
-  assigneeIds: string[];
-  assigneeNames: string[];
-  links: ImportLink[];
-  errors: string[];
-  warnings: string[];
-};
 
 export const MAX_ROWS = 500;
 
@@ -117,14 +102,14 @@ export function parseCsv(text: string): string[][] {
 
 /** Converte le righe in oggetti con chiavi normalizzate. Restituisce anche le colonne non riconosciute. */
 export function toRecords(rows: string[][]): { records: (RawRow & { __line: string })[]; missing: Column[]; unknown: string[] } {
-  if (!rows.length) return { records: [], missing: ["titolo", "assegnati"], unknown: [] };
+  if (!rows.length) return { records: [], missing: ["titolo"], unknown: [] };
   const header = rows[0].map((h) => norm(h));
   const map: (Column | null)[] = header.map((h) => {
     for (const col of COLUMNS) if (ALIASES[col].includes(h)) return col;
     return null;
   });
   const unknown = rows[0].filter((_, i) => !map[i] && rows[0][i].trim());
-  const missing = (["titolo", "assegnati"] as Column[]).filter((c) => !map.includes(c));
+  const missing = (["titolo"] as Column[]).filter((c) => !map.includes(c));
 
   const records = rows
     .slice(1)
@@ -185,160 +170,154 @@ function parseLinks(s: string): ImportLink[] | "invalid" {
   return out.slice(0, 20);
 }
 
-/** Valida le righe e le abbina a collaboratori e clienti esistenti. */
-export function checkRows(
-  records: RawRow[],
-  people: Person[],
-  clients: ClientRef[],
-  opts: { createClients: boolean },
-): CheckedRow[] {
+/** Riga modificabile nell'anteprima (step 2). */
+export type EditRow = {
+  key: string;
+  line: number;
+  title: string;
+  description: string;
+  clientName: string;
+  priority: Priority;
+  dueDate: string; // YYYY-MM-DD o ""
+  assigneeIds: string[];
+  links: ImportLink[];
+  warnings: string[];
+};
+
+export const PRIORITIES: Priority[] = ["bassa", "media", "alta", "urgente"];
+
+/** Problemi che impediscono l'import di una riga. */
+export function rowProblems(r: Pick<EditRow, "title" | "assigneeIds">): string[] {
+  const p: string[] = [];
+  if (!r.title.trim()) p.push("Titolo mancante");
+  if (!r.assigneeIds.length) p.push("Nessun collaboratore");
+  return p;
+}
+
+/** Interpreta i record del CSV e li abbina a collaboratori e clienti. Gli imprevisti diventano avvisi. */
+export function toEditRows(records: RawRow[], people: Person[], clients: ClientRef[]): EditRow[] {
   const byEmail = new Map(people.map((p) => [norm(p.email), p]));
-  const byName = new Map<string, Person[]>();
-  for (const p of people) {
-    const k = norm(p.full_name);
-    if (k) byName.set(k, [...(byName.get(k) ?? []), p]);
-  }
-  // anche solo il nome di battesimo, se è univoco
-  const byFirst = new Map<string, Person[]>();
-  for (const p of people) {
-    const k = norm(p.full_name).split(" ")[0];
-    if (k) byFirst.set(k, [...(byFirst.get(k) ?? []), p]);
-  }
-  // handle tipo "@mirydimartino" o "FabioPirajno": nome senza spazi oppure parte dell'email prima della @
+  const group = (keyOf: (p: Person) => string[]) => {
+    const m = new Map<string, Person[]>();
+    for (const p of people)
+      for (const k of new Set(keyOf(p).filter(Boolean))) m.set(k, [...(m.get(k) ?? []), p]);
+    return m;
+  };
   const compact = (s: string) => norm(s).replace(/[^a-z0-9]/g, "");
-  const byHandle = new Map<string, Person[]>();
-  for (const p of people) {
-    for (const k of new Set([compact(p.full_name), compact(p.email.split("@")[0])])) {
-      if (k) byHandle.set(k, [...(byHandle.get(k) ?? []).filter((x) => x.id !== p.id), p]);
-    }
-  }
+  const byName = group((p) => [norm(p.full_name)]);
+  const byFirst = group((p) => [norm(p.full_name).split(" ")[0]]);
+  // handle tipo "@mirydimartino" o "FabioPirajno": nome senza spazi oppure parte dell'email prima della @
+  const byHandle = group((p) => [compact(p.full_name), compact(p.email.split("@")[0])]);
   const clientByName = new Map(clients.map((c) => [norm(c.name), c]));
 
   return records.slice(0, MAX_ROWS).map((r, i) => {
-    const errors: string[] = [];
     const warnings: string[] = [];
     const line = Number((r as RawRow & { __line?: string }).__line ?? i + 2);
 
-    const title = (r.titolo ?? "").trim().slice(0, 300);
-    if (!title) errors.push("Titolo mancante");
-
-    // cliente
-    const clientName = (r.cliente ?? "").trim();
-    let clientId: string | null = null;
-    let newClient = false;
+    // cliente: se esiste uso il nome registrato, altrimenti verrà creato
+    let clientName = (r.cliente ?? "").trim().slice(0, 120);
     if (clientName) {
       const c = clientByName.get(norm(clientName));
-      if (c) clientId = c.id;
-      else if (opts.createClients) {
-        newClient = true;
-        warnings.push(`Nuovo cliente "${clientName}" verrà creato`);
-      } else errors.push(`Cliente "${clientName}" non esiste`);
+      if (c) clientName = c.name;
     }
 
-    // priorità
     let priority: Priority = "media";
     const pr = norm(r.priorita ?? "");
     if (pr) {
       if (PRIORITY_ALIASES[pr]) priority = PRIORITY_ALIASES[pr];
-      else warnings.push(`Priorità "${r.priorita}" non riconosciuta: uso "media"`);
+      else warnings.push(`Priorità "${r.priorita}" non riconosciuta`);
     }
 
-    // scadenza
     const due = parseDate(r.scadenza ?? "");
-    let dueDate: string | null = null;
-    if (due === "invalid") errors.push(`Data "${r.scadenza}" non valida (usa gg/mm/aaaa)`);
-    else dueDate = due;
+    let dueDate = "";
+    if (due === "invalid") warnings.push(`Data "${r.scadenza}" non valida`);
+    else dueDate = due ?? "";
 
-    // assegnati
     const assigneeIds: string[] = [];
-    const assigneeNames: string[] = [];
+    const add = (p: Person) => !assigneeIds.includes(p.id) && assigneeIds.push(p.id);
     const tokens = (r.assegnati ?? "")
       .split(/[,;|+\n]/)
       .map((t) => t.trim().replace(/^@/, "").trim())
       .filter(Boolean);
-    if (!tokens.length) errors.push("Nessun collaboratore assegnato");
     for (const t of tokens) {
       const k = norm(t);
-      // "tutti" = tutto il team attivo
       if (k === "tutti" || k === "tutto il team" || k === "team") {
-        for (const p of people) {
-          if (!assigneeIds.includes(p.id)) {
-            assigneeIds.push(p.id);
-            assigneeNames.push(p.full_name || p.email);
-          }
-        }
+        people.forEach(add);
         continue;
       }
-      let match: Person | undefined = byEmail.get(k);
-      if (!match) {
-        const full = byName.get(k);
-        if (full?.length === 1) match = full[0];
-        else if (full && full.length > 1) {
-          errors.push(`"${t}" è ambiguo: usa l'email`);
-          continue;
-        }
-      }
-      if (!match && !k.includes(" ") && !k.includes("@")) {
-        const first = byFirst.get(k);
-        if (first?.length === 1) match = first[0];
-        else if (first && first.length > 1) {
-          errors.push(`"${t}" corrisponde a più persone: usa nome e cognome o l'email`);
-          continue;
-        }
-      }
-      if (!match) {
-        const h = byHandle.get(compact(t));
-        if (h?.length === 1) match = h[0];
-        else if (h && h.length > 1) {
-          errors.push(`"${t}" corrisponde a più persone: usa l'email`);
-          continue;
-        }
-      }
-      if (!match) {
-        errors.push(`Collaboratore "${t}" non trovato`);
-        continue;
-      }
-      if (!assigneeIds.includes(match.id)) {
-        assigneeIds.push(match.id);
-        assigneeNames.push(match.full_name || match.email);
-      }
+      const candidates =
+        (byEmail.get(k) && [byEmail.get(k)!]) ||
+        byName.get(k) ||
+        (!k.includes(" ") && !k.includes("@") ? byFirst.get(k) : undefined) ||
+        byHandle.get(compact(t));
+      if (candidates?.length === 1) add(candidates[0]);
+      else if (candidates && candidates.length > 1) warnings.push(`"${t}" corrisponde a più persone`);
+      else warnings.push(`"${t}" non trovato`);
     }
 
-    // link
     let links: ImportLink[] = [];
     if (r.link?.trim()) {
       const l = parseLinks(r.link);
-      if (l === "invalid") errors.push("Link non valido");
+      if (l === "invalid") warnings.push("Link non valido, ignorato");
       else links = l;
     }
 
     return {
+      key: `r${line}`,
       line,
-      title,
+      title: (r.titolo ?? "").trim().slice(0, 300),
       description: (r.descrizione ?? "").trim().slice(0, 5000),
       clientName,
-      clientId,
-      newClient,
       priority,
       dueDate,
       assigneeIds,
-      assigneeNames,
       links,
-      errors,
       warnings,
     };
   });
 }
 
-/** Modello CSV da scaricare (separatore ";" per Excel in italiano). */
-export function templateCsv(examplePeople: Person[]) {
-  const a = examplePeople[0]?.email ?? "nome@azienda.it";
-  const b = examplePeople[1]?.email ?? examplePeople[0]?.email ?? "altro@azienda.it";
+export type CleanRow = Omit<EditRow, "key" | "line" | "warnings">;
+
+/** Validazione lato server delle righe modificate nell'anteprima: non si fida del browser. */
+export function cleanForImport(input: unknown, people: Person[]): { rows: CleanRow[]; skipped: number } {
+  const valid = new Set(people.map((p) => p.id));
+  const arr = Array.isArray(input) ? input.slice(0, MAX_ROWS) : [];
+  const rows: CleanRow[] = [];
+  for (const raw of arr) {
+    const r = raw as Partial<EditRow>;
+    const title = String(r.title ?? "").trim().slice(0, 300);
+    const assigneeIds = [...new Set((Array.isArray(r.assigneeIds) ? r.assigneeIds : []).map(String))].filter((id) =>
+      valid.has(id),
+    );
+    if (!title || !assigneeIds.length) continue;
+    const priority = PRIORITIES.includes(r.priority as Priority) ? (r.priority as Priority) : "media";
+    const d = String(r.dueDate ?? "");
+    const dueDate = /^\d{4}-\d{2}-\d{2}$/.test(d) && parseDate(d) === d ? d : "";
+    const links = (Array.isArray(r.links) ? r.links : [])
+      .map((l) => ({ label: String(l?.label ?? "").slice(0, 80), url: String(l?.url ?? "") }))
+      .filter((l) => /^https?:\/\//i.test(l.url))
+      .slice(0, 20);
+    rows.push({
+      title,
+      description: String(r.description ?? "").trim().slice(0, 5000),
+      clientName: String(r.clientName ?? "").trim().slice(0, 120),
+      priority,
+      dueDate,
+      assigneeIds,
+      links,
+    });
+  }
+  return { rows, skipped: arr.length - rows.length };
+}
+
+/** Modello CSV da scaricare (separatore ";" per Excel in italiano). Solo titolo e descrizione sono necessari. */
+export function templateCsv() {
   const rows = [
-    ["titolo", "descrizione", "cliente", "priorita", "scadenza", "assegnati", "link"],
-    ["Piano editoriale novembre", "12 post + 4 reel", "Pasticceria Rossi", "alta", "15/11/2026", a, "https://drive.google.com/..."],
-    ["Shooting prodotti", "Scatti per il nuovo catalogo", "Pasticceria Rossi", "media", "20/11/2026", `${a}, ${b}`, ""],
-    ["Report mensile social", "", "", "bassa", "", b, ""],
+    ["titolo", "descrizione", "cliente", "scadenza"],
+    ["Piano editoriale novembre", "12 post + 4 reel", "Pasticceria Rossi", "15/11/2026"],
+    ["Shooting prodotti", "Scatti per il nuovo catalogo", "Pasticceria Rossi", ""],
+    ["Report mensile social", "Numeri di ottobre e confronto con settembre", "", ""],
   ];
   const esc = (v: string) => (/[;"\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
   return "﻿" + rows.map((r) => r.map(esc).join(";")).join("\r\n") + "\r\n";

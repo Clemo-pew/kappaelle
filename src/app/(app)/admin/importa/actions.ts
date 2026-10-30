@@ -5,28 +5,27 @@ import { after } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getClients, getEmployees } from "@/lib/data";
-import { checkRows, MAX_ROWS, norm, type RawRow } from "@/lib/csv-import";
+import { cleanForImport, norm, type EditRow } from "@/lib/csv-import";
 import { sendPush } from "@/lib/push";
 
 export type ImportResult = { ok?: boolean; error?: string; created?: number; skipped?: number; newClients?: number };
 
-export async function importTasks(records: RawRow[], createClients: boolean): Promise<ImportResult> {
+export async function importTasks(edited: EditRow[]): Promise<ImportResult> {
   const admin = await requireAdmin();
-  if (!Array.isArray(records) || !records.length) return { error: "Nessuna riga da importare." };
-  if (records.length > MAX_ROWS) return { error: `Massimo ${MAX_ROWS} righe per import.` };
 
   // Rivalido tutto sul server con i dati aggiornati
   const [people, clients] = await Promise.all([getEmployees(true), getClients()]);
-  const rows = checkRows(records, people, clients, { createClients });
-  const valid = rows.filter((r) => r.errors.length === 0);
-  if (!valid.length) return { error: "Nessuna riga valida da importare." };
+  const { rows, skipped } = cleanForImport(edited, people);
+  if (!rows.length) return { error: "Nessuna riga pronta: ogni task deve avere un titolo e almeno un collaboratore." };
 
   const supabase = await createClient();
 
   // 1. Clienti nuovi
   const clientIds = new Map(clients.map((c) => [norm(c.name), c.id]));
   const toCreate = [
-    ...new Map(valid.filter((r) => r.newClient).map((r) => [norm(r.clientName), r.clientName.trim()])).values(),
+    ...new Map(
+      rows.filter((r) => r.clientName && !clientIds.has(norm(r.clientName))).map((r) => [norm(r.clientName), r.clientName]),
+    ).values(),
   ];
   if (toCreate.length) {
     const { data, error } = await supabase.from("clients").insert(toCreate.map((name) => ({ name }))).select("id, name");
@@ -35,31 +34,25 @@ export async function importTasks(records: RawRow[], createClients: boolean): Pr
   }
 
   // 2. Task (id generati qui, così le assegnazioni puntano sempre al task giusto)
-  const ids = valid.map(() => crypto.randomUUID());
-  const { data: inserted, error: tErr } = await supabase
-    .from("tasks")
-    .insert(
-      valid.map((r, i) => ({
-        id: ids[i],
-        title: r.title,
-        description: r.description,
-        client_id: r.clientName ? clientIds.get(norm(r.clientName)) ?? null : null,
-        priority: r.priority,
-        due_date: r.dueDate,
-        links: r.links,
-        created_by: admin.id,
-      })),
-    )
-    .select("id");
-  if (tErr || !inserted || inserted.length !== valid.length) {
-    return { error: "Errore creando i task: " + (tErr?.message ?? "risposta incompleta") };
-  }
+  const ids = rows.map(() => crypto.randomUUID());
+  const { error: tErr } = await supabase.from("tasks").insert(
+    rows.map((r, i) => ({
+      id: ids[i],
+      title: r.title,
+      description: r.description,
+      client_id: r.clientName ? clientIds.get(norm(r.clientName)) ?? null : null,
+      priority: r.priority,
+      due_date: r.dueDate || null,
+      links: r.links,
+      created_by: admin.id,
+    })),
+  );
+  if (tErr) return { error: "Errore creando i task: " + tErr.message };
 
   // 3. Assegnazioni (i trigger creano le notifiche interne)
-  const assignments = valid.flatMap((r, i) =>
-    r.assigneeIds.map((user_id) => ({ task_id: ids[i], user_id })),
-  );
-  const { error: aErr } = await supabase.from("task_assignees").insert(assignments);
+  const { error: aErr } = await supabase
+    .from("task_assignees")
+    .insert(rows.flatMap((r, i) => r.assigneeIds.map((user_id) => ({ task_id: ids[i], user_id }))));
   if (aErr) {
     // annullo i task appena creati per non lasciare task senza assegnatari
     await supabase.from("tasks").delete().in("id", ids);
@@ -68,7 +61,7 @@ export async function importTasks(records: RawRow[], createClients: boolean): Pr
 
   // 4. Una sola notifica push riassuntiva per collaboratore
   const perUser = new Map<string, { count: number; first: string; taskId: string }>();
-  valid.forEach((r, i) => {
+  rows.forEach((r, i) => {
     for (const uid of r.assigneeIds) {
       if (uid === admin.id) continue;
       const cur = perUser.get(uid);
@@ -92,5 +85,5 @@ export async function importTasks(records: RawRow[], createClients: boolean): Pr
   });
 
   revalidatePath("/", "layout");
-  return { ok: true, created: valid.length, skipped: rows.length - valid.length, newClients: toCreate.length };
+  return { ok: true, created: rows.length, skipped, newClients: toCreate.length };
 }

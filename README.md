@@ -55,7 +55,7 @@ Stack: Next.js 16 (App Router) · Supabase (Auth + Postgres con Row Level Securi
 4. Ogni collaboratore in **I miei task** aggiorna la sua percentuale; l'admin vede in tempo reale la % di ciascuno, la media del task, l'ora dell'ultimo aggiornamento e le note.
 5. Cliccando sul titolo di un task si apre la sua pagina: link allegati, avanzamento e **commenti**. Scrivi `@` e scegli un collaboratore per menzionarlo.
 6. La **campanella** in alto mostra le notifiche non lette; aprendo il task collegato diventano lette.
-7. **Importa CSV** (solo admin, da *Tutti i task*): scarica il modello, compilalo in Excel e salvalo come CSV, poi caricalo. Vedi l'anteprima con eventuali errori e importi solo le righe valide. Colonne: `titolo`*, `assegnati`* (email o nome, separati da virgola), `descrizione`, `cliente`, `priorita`, `scadenza` (gg/mm/aaaa), `link`.
+7. **Importa CSV** (solo admin, da *Tutti i task*): il file deve avere almeno `titolo` (e di solito `descrizione`); `cliente`, `scadenza` (gg/mm/aaaa), `priorita`, `link`, `assegnati` sono facoltative. Dopo il caricamento si apre un'anteprima modificabile: assegni i collaboratori riga per riga o in blocco (filtra un cliente → seleziona tutte → *Assegna a…*), correggi titoli, clienti, date e priorità, poi *Conferma e importa*.
 
 ## App sul telefono
 

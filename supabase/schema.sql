@@ -48,6 +48,12 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Recupera i profili degli utenti creati PRIMA di eseguire questo script
+insert into public.profiles (id, full_name, email, role)
+select u.id, coalesce(u.raw_user_meta_data->>'full_name', ''), coalesce(u.email, ''), 'employee'
+from auth.users u
+on conflict (id) do nothing;
+
 -- Helper: l'utente corrente è admin?
 create or replace function public.is_admin()
 returns boolean
